@@ -2,10 +2,7 @@ export interface PlaceImage {
   id: string;
   url: string;
   alt_description: string;
-  width: number;
-  height: number;
-  photographer: string;
-  photographer_url: string;
+  credit: string; 
 }
 
 export interface Place {

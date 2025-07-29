@@ -26,6 +26,8 @@ import {
   Send,
 } from "lucide-react"
 import Link from "next/link"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   id: string
@@ -623,8 +625,47 @@ export default function NavayInterface() {
                           ? 'bg-slate-700 text-slate-100'
                           : 'bg-slate-100 text-slate-800'
                     }`}>
-                      <div className="text-sm whitespace-pre-wrap">
-                        {message.content}
+                      <div className="text-sm prose prose-sm max-w-none">
+                        {message.role === 'assistant' ? (
+                          <div className={`markdown-content ${isDarkTheme ? 'dark' : ''}`}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                                strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                                em: ({children}) => <em className="italic">{children}</em>,
+                                ul: ({children}) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                                ol: ({children}) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                                li: ({children}) => <li className="ml-2">{children}</li>,
+                                h1: ({children}) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                                h2: ({children}) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                                h3: ({children}) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
+                                code: ({children}) => (
+                                  <code className={`px-1 py-0.5 rounded text-xs ${
+                                    isDarkTheme 
+                                      ? 'bg-slate-600 text-slate-200' 
+                                      : 'bg-slate-200 text-slate-800'
+                                  }`}>
+                                    {children}
+                                  </code>
+                                ),
+                                pre: ({children}) => (
+                                  <pre className={`p-2 rounded text-xs overflow-x-auto ${
+                                    isDarkTheme 
+                                      ? 'bg-slate-600 text-slate-200' 
+                                      : 'bg-slate-200 text-slate-800'
+                                  }`}>
+                                    {children}
+                                  </pre>
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <div className="whitespace-pre-wrap">{message.content}</div>
+                        )}
                       </div>
                       <div className={`text-xs mt-2 opacity-70`}>
                         {message.timestamp.toLocaleTimeString()}

@@ -1,67 +1,115 @@
 import { PlaceImage } from '@/types/place';
 
-const UNSPLASH_ACCESS_KEY = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
-const UNSPLASH_API_URL = 'https://api.unsplash.com';
-
-export async function getUnsplashImages(
-  placeName: string,
-  address?: string,
-  category?: string,
-  count: number = 3
-): Promise<PlaceImage[]> {
-  if (!UNSPLASH_ACCESS_KEY) {
-    console.warn('Unsplash access key not found');
-    return [];
-  }
-
+// Fonction pour récupérer des images depuis Unsplash
+export async function getUnsplashImages(placeName: string, location: string, category?: string): Promise<PlaceImage[]> {
   try {
-    // Construire la requête de recherche
-    let searchQuery = placeName;
-    
-    // Ajouter le lieu/ville si disponible dans l'adresse
-    if (address) {
-      const cityMatch = address.match(/([A-Za-z\s]+)(?:,|$)/);
-      if (cityMatch) {
-        searchQuery += ` ${cityMatch[1].trim()}`;
-      }
-    }
-    
-    // Ajouter la catégorie si disponible
+    // Construire les termes de recherche
+    const searchTerms = [placeName];
+    if (location) searchTerms.push(location);
     if (category) {
-      searchQuery += ` ${category}`;
-    }
-
-    const response = await fetch(
-      `${UNSPLASH_API_URL}/search/photos?query=${encodeURIComponent(searchQuery)}&per_page=${count}&orientation=landscape`,
-      {
-        headers: {
-          'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}`,
-        },
+      const categoryTerms: Record<string, string> = {
+        'restaurant': 'food restaurant',
+        'cafe': 'coffee cafe',
+        'museum': 'museum art',
+        'park': 'park nature',
+        'hotel': 'hotel accommodation',
+        'bar': 'bar nightlife',
+        'shop': 'shopping store',
+        'attraction': 'tourist attraction'
+      };
+      
+      if (categoryTerms[category.toLowerCase()]) {
+        searchTerms.push(categoryTerms[category.toLowerCase()]);
+      } else {
+        searchTerms.push(category);
       }
-    );
-
+    }
+    
+    const query = encodeURIComponent(searchTerms.join(' '));
+    
+    // Vérifier si la clé API est disponible
+    const accessKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
+    if (!accessKey) {
+      console.warn('Clé API Unsplash non disponible, utilisation des images de secours');
+      return getFallbackImages(category);
+    }
+    
+    const response = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=3`, {
+      headers: {
+        'Authorization': `Client-ID ${accessKey}`
+      }
+    });
+    
     if (!response.ok) {
-      throw new Error(`Unsplash API error: ${response.status}`);
+      throw new Error('Erreur lors de la récupération des images Unsplash');
     }
-
+    
     const data = await response.json();
-
-    if (!data.results || data.results.length === 0) {
-      return [];
+    
+    if (data.results && data.results.length > 0) {
+      return data.results.map((img: any) => ({
+        id: img.id,
+        url: img.urls.small,
+        alt: `${placeName} in ${location}`,
+        credit: img.user.name,
+        creditUrl: img.user.links.html
+      }));
     }
-
-    return data.results.map((photo: any): PlaceImage => ({
-      id: photo.id,
-      url: photo.urls.regular,
-      alt_description: photo.alt_description || placeName,
-      width: photo.width,
-      height: photo.height,
-      photographer: photo.user.name,
-      photographer_url: photo.user.links.html,
-    }));
-
+    
+    // Si aucune image n'est trouvée, utiliser les images de secours
+    return getFallbackImages(category);
   } catch (error) {
     console.error('Erreur lors de la récupération des images Unsplash:', error);
-    return [];
+    return getFallbackImages(category);
   }
+}
+
+// Fonction pour obtenir des images de secours basées sur la catégorie
+export function getFallbackImages(category?: string): PlaceImage[] {
+  const fallbackMap: Record<string, PlaceImage[]> = {
+    'restaurant': [
+      {
+        id: 'rest1',
+        url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
+        alt_description: 'Restaurant interior',
+        credit: 'Unsplash'
+      }
+    ],
+    'cafe': [
+      {
+        id: 'cafe1',
+        url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb',
+        alt_description: 'Café',
+        credit: 'Unsplash'
+      }
+    ],
+    'museum': [
+      {
+        id: 'museum1',
+        url: 'https://images.unsplash.com/photo-1565060169187-5284a3f427a7',
+        alt_description: 'Museum',
+        credit: 'Unsplash'
+      }
+    ],
+    'park': [
+      {
+        id: 'park1',
+        url: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f',
+        alt_description: 'Park',
+        credit: 'Unsplash'
+      }
+    ],
+    'default': [
+      {
+        id: 'default1',
+        url: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd',
+        alt_description: 'Travel destination',
+        credit: 'Unsplash'
+      }
+    ]
+  };
+  
+  return category && fallbackMap[category.toLowerCase()] 
+    ? fallbackMap[category.toLowerCase()] 
+    : fallbackMap['default'];
 }
