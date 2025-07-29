@@ -1,8 +1,9 @@
 export interface PlaceImage {
   id: string;
   url: string;
-  alt_description: string;
-  credit: string; 
+  alt: string;
+  credit: string;
+  creditUrl?: string;
 }
 
 export interface Place {
@@ -18,4 +19,6 @@ export interface Place {
   images?: PlaceImage[];
   estimatedCost?: string;
   priceLevel?: 'budget' | 'mid' | 'high';
+  lat?: number;
+  lng?: number;
 }
