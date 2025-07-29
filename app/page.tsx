@@ -28,6 +28,8 @@ import {
 import Link from "next/link"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import PlacesMapView from '@/components/PlacesMapView'
+import { Place } from '@/types/place'
 
 interface Message {
   id: string
@@ -59,7 +61,7 @@ export default function NavayInterface() {
     suggestedLocations: []
   })
   const [isLoading, setIsLoading] = useState(false)
-  const [places, setPlaces] = useState<any[]>([])
+  const [places, setPlaces] = useState<Place[]>([])
   const [showChat, setShowChat] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -610,7 +612,7 @@ export default function NavayInterface() {
             // Chat interface
             <div className="flex-1 flex flex-col">
               {/* Messages area */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -668,7 +670,10 @@ export default function NavayInterface() {
                         )}
                       </div>
                       <div className={`text-xs mt-2 opacity-70`}>
-                        {message.timestamp.toLocaleTimeString()}
+                        {message.timestamp.toLocaleTimeString('fr-FR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
                       </div>
                     </div>
                   </div>
@@ -688,6 +693,19 @@ export default function NavayInterface() {
                 )}
                 <div ref={messagesEndRef} />
               </div>
+
+              {/* Places Map and Cards */}
+              {places.length > 0 && (
+                <div className="px-6 pb-4">
+                  <PlacesMapView 
+                    places={places}
+                    showMap={true}
+                    showCards={true}
+                    mapHeight="400px"
+                    className="space-y-6"
+                  />
+                </div>
+              )}
 
               {/* Chat input */}
               <div className="p-6 border-t border-slate-200 dark:border-slate-700">
